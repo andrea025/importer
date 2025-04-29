@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Importer
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-10 offset-md-1">
+        <div class="card">
+            <div class="card-header">
+                <h4>Import Adversary Emulation Plan</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info" role="alert">
+                    <p>Upload a YAML file containing an adversary emulation plan to automatically create adversaries and abilities in CALDERA.</p>
+                    <p>The YAML file should follow the structure shown in the example below.</p>
+                </div>
+
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="emulation_plan_file">Select Emulation Plan YAML File</label>
+                        <input type="file" class="form-control-file" id="emulation_plan_file" name="emulation_plan_file" accept=".yaml,.yml" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-2">Import</button>
+                </form>
+                
+                <div id="result-container" class="mt-3" style="display: none;">
+                    <div class="alert" id="result-message"></div>
+                    <div id="import-details" class="card mt-3" style="display: none;">
+                        <div class="card-header">
+                            <h5>Import Details</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                <tbody>
+                                    <tr>
+                                        <th scope="row">Adversary ID:</th>
+                                        <td id="adversary-id"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Adversary Name:</th>
+                                        <td id="adversary-name"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Abilities Count:</th>
+                                        <td id="abilities-count"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Processing Time:</th>
+                                        <td id="processing-time"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div class="mt-3">
+                                <a href="/campaigns/agents" class="btn btn-primary">View in Adversaries</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <h5>Example YAML Structure</h5>
+                    <pre class="p-3 bg-light"><code>
+- emulation_plan_details:
+    id: 186b4d47-f4c0-48cb-9688-887070db45f1
+    adversary_name: Carbanak
+    adversary_description: An advanced attacker targeting financial institutions
+    attack_version: 8.1
+    format_version: 1.0
+
+- id: 453cb643-892b-475d-8db9-df61289749f1
+  name: Screen Capture
+  description: Download screen capture PowerShell script to target and execute
+  tactic: collection
+  technique:
+    attack_id: T1113
+    name: "Screen Capture"
+  platforms:
+    windows:
+      psh,pwsh:
+        command: |
+          powershell.exe -ExecutionPolicy Bypass -File .\take-screenshot.ps1
+        payloads:
+        - take-screenshot.ps1
+        cleanup: |
+          Remove-Item -Force screenshot__.png
+                    </code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $('#uploadForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            var formData = new FormData();
+            var fileInput = $('#emulation_plan_file')[0];
+            
+            // Check if a file was selected
+            if (fileInput.files.length === 0) {
+                showResult('error', 'Please select a file to upload.');
+                return;
+            }
+            
+            formData.append('emulation_plan_file', fileInput.files[0]);
+            
+            // Show loading indicator
+            $('#result-container').hide();
+            $('button[type="submit"]').prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Importing...');
+            
+            // Submit the form
+            $.ajax({
+                url: '/plugin/emulation_plan_importer/upload',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(data) {
+                    response = data; // Store response globally for access in showResult
+                    if (data.status === 'success') {
+                        showResult('success', data.message);
+                    } else {
+                        showResult('error', data.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    showResult('error', 'Error uploading emulation plan: ' + error);
+                },
+                complete: function() {
+                    $('button[type="submit"]').prop('disabled', false).html('Import');
+                }
+            });
+        });
+        
+        function showResult(type, message) {
+            var alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            $('#result-message').removeClass('alert-success alert-danger').addClass(alertClass).html(message);
+            $('#result-container').show();
+            
+            // Show details if available
+            if (type === 'success' && response && response.details) {
+                $('#adversary-id').text(response.details.adversary_id);
+                $('#adversary-name').text(response.details.adversary_name);
+                $('#abilities-count').text(response.details.abilities_count);
+                $('#processing-time').text(response.details.processing_time);
+                $('#import-details').show();
+            } else {
+                $('#import-details').hide();
+            }
+        }
+    });
+</script>
+{% endblock %}
