@@ -5,7 +5,7 @@ import logging
 from datetime import datetime
 from app.objects.c_ability import Ability
 from app.objects.c_adversary import Adversary
-#from app.objects.c_executor import Executor
+from plugins.importer.app.objects.c_executor import Executor
 
 
 class ImporterService:

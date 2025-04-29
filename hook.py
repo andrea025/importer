@@ -22,22 +22,24 @@ async def enable(services):
     app.router.add_route('POST', '/plugin/importer/upload', importer_api.upload_emulation_plan)
 
     # Register plugin with UI
-    services.get('auth_svc').set_authorized_route('GET', '/plugin/importer/gui')
+    # Use the correct method to register authorized routes
+    await auth_svc.apply(app, '/plugin/importer/gui')
+    await auth_svc.apply(app, '/plugin/importer/upload')
     
-    # Register templates directory for server-side templates (if needed)
+    # Register templates directory for server-side templates
     app.router.add_static('/importer', 'plugins/importer/templates', append_version=True)
     
     # Register the Vue component
     services.get('app_svc').register_vue_plugin(
-        plugin_name='importer',  # This should match the plugin directory name
+        plugin_name='importer',
         vue_route={
-            'name': 'Importer',  # Name seen in the navigation menu
-            'path': '/importer',  # Browser path
-            'component': 'Importer',  # Vue component name
+            'name': 'Adversary Emulation Importer',  # Updated name
+            'path': '/importer',
+            'component': 'Importer',
             'display': {
-                'visible': True,  # Make visible in the navigation menu
-                'defaultPath': '/importer',  # Default path
-                'icon': 'cloud_upload'  # Material icon name
+                'visible': True,
+                'defaultPath': '/importer',
+                'icon': 'upload_file'  # Updated to a more appropriate icon
             }
         }
     )
