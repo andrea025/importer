@@ -20,10 +20,6 @@ class ImporterGUI(BaseService):
 
     @template('importer.html')
     async def splash(self, request):
-        return dict(name=self.name, description=self.description)
-
-    @template('importer.html')
-    async def splash(self, request):
         """
         Show the main plugin page
         """

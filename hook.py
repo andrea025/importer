@@ -15,14 +15,32 @@ async def enable(services):
     file_svc = services.get('file_svc')
 
     importer_gui = ImporterGUI(services, name=name, description=description)
-    # Register templates directory
-    templates_dir = 'plugins/importer/templates/'
-    app.router.add_static('/importer', templates_dir, append_version=True)
+    app.router.add_route('GET', '/plugin/importer/gui', importer_gui.splash)
 
     importer_api = ImporterAPI(services)
     # Add API routes here
-    app.router.add_route('GET', '/plugin/importer/gui', importer_gui.splash)
     app.router.add_route('POST', '/plugin/importer/upload', importer_api.upload_emulation_plan)
+
+    # Register plugin with UI
+    services.get('auth_svc').set_authorized_route('GET', '/plugin/importer/gui')
+    
+    # Register templates directory for server-side templates (if needed)
+    app.router.add_static('/importer', 'plugins/importer/templates', append_version=True)
+    
+    # Register the Vue component
+    services.get('app_svc').register_vue_plugin(
+        plugin_name='importer',  # This should match the plugin directory name
+        vue_route={
+            'name': 'Importer',  # Name seen in the navigation menu
+            'path': '/importer',  # Browser path
+            'component': 'Importer',  # Vue component name
+            'display': {
+                'visible': True,  # Make visible in the navigation menu
+                'defaultPath': '/importer',  # Default path
+                'icon': 'cloud_upload'  # Material icon name
+            }
+        }
+    )
 
     # Register plugin with server
     BaseWorld.apply_config('plugins.importer', {})

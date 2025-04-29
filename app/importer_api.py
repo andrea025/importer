@@ -69,5 +69,3 @@ class ImporterAPI(BaseService):
         except Exception as e:
             self.log.error(f'Error importing emulation plan: {str(e)}')
             return web.json_response({'status': 'error', 'message': str(e)})
-
-    # We've moved all the processing logic to the ImporterService class
